@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven { url "https://www.jetbrains.com/intellij-repository/releases" }
+    maven { url "https://jetbrains.bintray.com/intellij-third-party-dependencies" }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    compile 'com.jetbrains.intellij.platform:util:212.629'
+    compile 'com.jetbrains.intellij.platform:util-rt:212.629'
+    compile 'org.jetbrains:annotations:20.1.0'
+    compile 'org.jdom:jdom:1.1'
+
+}
+
+test {
+    useJUnitPlatform()
+}
