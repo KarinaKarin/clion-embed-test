@@ -12,13 +12,8 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.function.Predicate;
 
-import static com.intellij.intern.y21.clion.svd.Format.HEX;
+public class SvdRegister extends SvdRegisterLevel<SvdField> {
 
-
-public class SvdRegister extends SvdValue<SvdField> {
-
-  private static final Format DEFAULT_FORMAT = HEX;
-  private final Address myAddress;
   private volatile long value = 0;
   @Nullable
   private volatile String failReason = "-";
@@ -30,15 +25,10 @@ public class SvdRegister extends SvdValue<SvdField> {
                      int bitSize,
                      @NotNull RegisterAccess access,
                      @Nullable RegisterReadAction readAction) {
-    super(peripheralName + "|" + name, name, description, access, readAction, bitSize, DEFAULT_FORMAT);
-    this.myAddress = address;
+    super(peripheralName + "|" + name, name, description, address, access, readAction, bitSize);
     if (!getAccess().isReadable()) {
       markNoValue(EmbeddedBundle.message("svd.write.only"), false);
     }
-  }
-
-  public Address getAddress() {
-    return myAddress;
   }
 
   public void processValue(@Nullable List<LLMemoryHunk> hunks, @Nullable Throwable e) {
@@ -50,9 +40,9 @@ public class SvdRegister extends SvdValue<SvdField> {
     }
     else {
       for (LLMemoryHunk hunk : hunks) {
-        if (hunk.getRange().contains(myAddress)) {
+        if (hunk.getRange().contains(getAddress())) {
           int byteSize = (getBitSize() + 7) / 8;
-          int offset = myAddress.minus(hunk.getRange().getStart());
+          int offset = getAddress().minus(hunk.getRange().getStart());
           long value = getValue(hunk, offset, byteSize);
           changed = this.value != value;
           if (changed) {
@@ -94,12 +84,6 @@ public class SvdRegister extends SvdValue<SvdField> {
 
   public boolean isFailed() {
     return failReason != null;
-  }
-
-  @NotNull
-  @Override
-  public Format getDefaultFormat() {
-    return DEFAULT_FORMAT;
   }
 
   @Override

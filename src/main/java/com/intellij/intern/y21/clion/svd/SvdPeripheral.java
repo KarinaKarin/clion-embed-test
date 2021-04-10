@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.PrintWriter;
 import java.util.function.Predicate;
 
-public class SvdPeripheral extends SvdNodeBase<SvdRegister> {
+public class SvdPeripheral extends SvdNodeBase<SvdRegisterLevel<?>> {
 
   private final int myRegisterBitSize;
   private final RegisterAccess myRegisterAccess;

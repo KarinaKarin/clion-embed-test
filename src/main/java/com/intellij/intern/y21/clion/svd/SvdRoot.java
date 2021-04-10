@@ -3,7 +3,6 @@ package com.intellij.intern.y21.clion.svd;
 import com.intellij.intern.y21.clion.stubs.Address;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.NlsSafe;
-import com.intellij.intern.y21.clion.stubs.EmbeddedBundle;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Text;
@@ -169,7 +168,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
       registers.add(register);
     }
     registers.sort(Comparator.comparing(SvdRegister::getAddress));
-    peripheral.setChildren(registers);
+    peripheral.setChildren(new ArrayList<>(registers));
   }
 
   @NotNull
