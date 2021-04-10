@@ -158,7 +158,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
       int registerSize = getDomSubTagValue(element, derivedFrom, "size", Integer::decode, peripheral.getRegisterBitSize());
       RegisterAccess registerAccess =
         getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, peripheral.getRegisterAccess());
-      RegisterReadAction registerReadAction = getDomSubTagValue(element, derivedFrom, "access", RegisterReadAction::parse, null);
+      RegisterReadAction registerReadAction = getDomSubTagValue(element, derivedFrom, "readAction", RegisterReadAction::parse, null);
       SvdRegister register = bigEndian ?
                              new SvdRegisterBigEndian(peripheral.getId(), name, description, address, registerSize, registerAccess,
                                                       registerReadAction) :
@@ -228,7 +228,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
       String derivedFromName = element.getAttributeValue("derivedFrom");
       Element derivedFrom = derivedFromName == null ? null : elements.get(derivedFromName);
       RegisterAccess registerAccess = getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, register.getAccess());
-      RegisterReadAction registerReadAction = getDomSubTagValue(element, derivedFrom, "access", RegisterReadAction::parse, null);
+      RegisterReadAction registerReadAction = getDomSubTagValue(element, derivedFrom, "readAction", RegisterReadAction::parse, null);
       int bitOffset = getDomSubTagValue(element, derivedFrom, "bitOffset", Integer::parseInt, -1);
       int bitSize;
       if (bitOffset >= 0) {
