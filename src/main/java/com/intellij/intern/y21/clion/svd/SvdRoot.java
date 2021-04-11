@@ -204,8 +204,10 @@ public class SvdRoot implements SvdNode<SvdFile> {
       if (parent != null) {
         parentId = parent.getId();
       }
-      SvdCluster cluster = new SvdCluster(parentId + "|" + headerStructName + "|" + name,
-              name, description, address, registerAccess, registerSize);
+      if (!headerStructName.isBlank()) {
+        parentId += "|" + headerStructName;
+      }
+      SvdCluster cluster = new SvdCluster(parentId, name, description, address, registerAccess, registerSize);
       loadContent(cluster, peripheral, element, derivedFrom, bigEndian);
       clusters.add(cluster);
     }
@@ -346,9 +348,63 @@ public class SvdRoot implements SvdNode<SvdFile> {
       else {
         description += " [" + bitOffset + ":" + (bitOffset + bitSize - 1) + "]";
       }
-      fields.add(new SvdField(register, name, description, registerAccess, registerReadAction, bitOffset, bitSize));
+      SvdField f = new SvdField(register, name, description, registerAccess, registerReadAction, bitOffset, bitSize);
+      loadContent(f, element, derivedFrom);
+      fields.add(f);
     }
     fields.sort(Comparator.comparingInt(SvdField::getBitOffset));
     register.setChildren(fields);
+  }
+
+  private static void loadContent(@NotNull SvdField field,
+                                  @NotNull Element fieldElement,
+                                  @Nullable Element fieldDerivedFrom) {
+
+//  <xs:element name="enumeratedValues" type="enumerationType" minOccurs="0" maxOccurs="2">
+    Map<String, Element> elements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    Stream.concat(selectDomSubNodes(fieldElement, "enumeratedValues").stream(),
+            selectDomSubNodes(fieldDerivedFrom, "enumeratedValues").stream())
+            .forEach(element -> elements.put(element.getChildText("name"), element));
+
+    List<SvdEnum> enumValues = new ArrayList<>();
+    for (Map.Entry<String, Element> entry : elements.entrySet()) {
+      Element element = entry.getValue();
+      String name = entry.getKey();
+      String derivedFromName = element.getAttributeValue("derivedFrom");
+      Element derivedFrom = derivedFromName == null ? null : elements.get(derivedFromName);
+      EnumUsage enumUsage = getDomSubTagValue(element, derivedFrom, "usage", EnumUsage::parse, EnumUsage.READ_WRITE);
+      String parentId = field.getId();
+      String headerStructName = getDomSubTagText(element, derivedFrom, "headerStructName");
+      if (!headerStructName.isBlank()) {
+        parentId += "|" + headerStructName;
+      }
+      SvdEnum svdEnum = new SvdEnum(parentId, name, enumUsage);
+      loadContent(svdEnum, element, derivedFrom);
+      enumValues.add(svdEnum);
+    }
+
+    enumValues.sort(NAME_COMPARATOR);
+    field.setChildren(enumValues);
+  }
+
+  private static void loadContent(@NotNull SvdEnum svdEnum,
+                                  @NotNull Element enumElement,
+                                  @Nullable Element enumDerivedFrom) {
+
+    Map<String, Element> elements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    Stream.concat(selectDomSubNodes(enumElement, "enumeratedValue").stream(),
+            selectDomSubNodes(enumDerivedFrom, "enumeratedValue").stream())
+            .forEach(element -> elements.put(element.getChildText("name"), element));
+
+    List<SvdEnumValue> enumValues = new ArrayList<>();
+    for (Map.Entry<String, Element> entry : elements.entrySet()) {
+      Element element = entry.getValue();
+      String name = entry.getKey();
+      Long value = getDomSubTagValue(element, null, "value", Long::decode, null);
+      Boolean isDefault = getDomSubTagValue(element, null, "isDefault", Boolean::parseBoolean, null);
+      String description = loadDescription(element, null);
+      enumValues.add(new SvdEnumValue(svdEnum.getId() + "|" + name, name, description, value, isDefault));
+    }
+    svdEnum.setChildren(enumValues);
   }
 }

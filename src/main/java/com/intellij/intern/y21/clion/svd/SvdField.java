@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static com.intellij.intern.y21.clion.svd.Format.BIN;
 
-public class SvdField extends SvdValue<SvdNodeBase<?>> {
+public class SvdField extends SvdValue<SvdEnum> {
 
   private static final Format DEFAULT_FORMAT = BIN;
   private final int myBitOffset;
