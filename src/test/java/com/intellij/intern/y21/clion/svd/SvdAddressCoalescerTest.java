@@ -6,10 +6,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SvdAddressCoalescerTest {
 
@@ -27,6 +30,79 @@ public class SvdAddressCoalescerTest {
     }
 
     @Test
+    public void testClusterWithNestedOne() {
+        validateCluster("DPLL", 1, 1, Arrays.asList("DPLLCTRLA", "CTRLA"));
+    }
+
+    @Test
+    public void testClusterWithoutNesting() {
+        validateCluster("USART_EXT", 0, 1, Collections.singletonList("CTRLA"));
+    }
+
+    private void validateCluster(String name, int expectedClusterChildCount,
+                             int expectedRegisterChildCount, List<String> allRegistersNames
+    ) {
+        SvdCluster cluster = clusterByName(name);
+        List<String> children = cluster
+                .getAllRegisters()
+                .stream()
+                .map(SvdNodeBase::getName)
+                .collect(Collectors.toList());
+
+        assertTrue(children.size() == allRegistersNames.size() &&
+                children.containsAll(allRegistersNames) && allRegistersNames.containsAll(children));
+
+        long actualClusterChildCount = cluster
+                .getChildren()
+                .stream()
+                .filter(SvdCluster.class::isInstance)
+                .count();
+
+        assertEquals(expectedClusterChildCount, actualClusterChildCount);
+
+        long actualRegisterChildCount = cluster
+                .getChildren()
+                .stream()
+                .filter(SvdRegister.class::isInstance)
+                .count();
+
+        assertEquals(expectedRegisterChildCount, actualRegisterChildCount);
+    }
+
+    private SvdCluster clusterByName(String name) {
+        return (SvdCluster) myAllNodes.stream()
+                .filter(node -> name.equals(node.getName()))
+                .findAny()
+                .orElseThrow(AssertionError::new);
+    }
+
+    @Test
+    public void testEnumWithZeroValue() {
+        validateEnum("PAD0", 0L, null, "SERCOM PAD[0] is used as data input");
+    }
+
+    @Test
+    public void testEnumWithNonZeroValue() {
+        validateEnum("PAD2", 2L, null, "SERCOM PAD[2] is used as data input");
+    }
+
+    @Test
+    public void testEnumIsDefault() {
+        validateEnum("PAD3", null, true, "SERCOM PAD[3] is used as data input");
+    }
+
+    private void validateEnum(String enumName, Long expectedValue, Boolean expectedIsDefault, String expectedDescription) {
+        SvdEnumValue svdEnum = (SvdEnumValue) myAllNodes.stream()
+                .filter(node -> enumName.equals(node.getName()))
+                .findAny()
+                .orElseThrow(AssertionError::new);
+
+        assertEquals(expectedValue, svdEnum.getValue());
+        assertEquals(expectedIsDefault, svdEnum.getDefault());
+        assertEquals(expectedDescription, svdEnum.getDescription());
+    }
+
+    @Test
     public void testOneBit() {
         testField("ONE_BIT", 11, 1);
     }
@@ -41,19 +117,19 @@ public class SvdAddressCoalescerTest {
         testField("THREE_BITS", 1, 3);
     }
 
-  @Test
+    @Test
     public void testFourBits() {
         testField("FOUR_BITS", 12, 4);
     }
 
-  @Test
+    @Test
     public void testFiveBits() {
         testField("FIVE_BITS", 16, 5);
     }
 
     private void testField(String name, int expectedBitOffset, int expectedBitSize) {
         SvdField field = nodeByName(name);
-        assertEquals( expectedBitOffset, field.getBitOffset());
+        assertEquals(expectedBitOffset, field.getBitOffset());
         assertEquals(expectedBitSize, field.getBitSize());
     }
 
@@ -64,13 +140,13 @@ public class SvdAddressCoalescerTest {
                 .orElseThrow(AssertionError::new);
     }
 
-  @Test
+    @Test
     public void testSmoke() {
 
         SvdCoalescerForTest coalescer = new SvdCoalescerForTest();
         coalescer.loadFrom(myAllNodes);
 
-        assertEquals(2, coalescer.size());
+        assertEquals(3, coalescer.size());
         Pair<AddressRange, List<SvdRegister>> pair1 = coalescer.get(0);
         assertEquals(0x1002, pair1.first.getStart().getUnsignedLongValue());
         assertEquals(0x1003, pair1.first.getEnd().getUnsignedLongValue());

@@ -38,6 +38,56 @@
           <resetValue>0x00000000</resetValue>
           <resetMask>0x03FFFFFF</resetMask>
         </register>
+        <cluster>
+          <dim>2</dim>
+          <dimIncrement>0x14</dimIncrement>
+          <name>DPLL</name>
+          <description/>
+          <addressOffset>0x30</addressOffset>
+          <register>
+            <name>DPLLCTRLA</name>
+            <description>DPLL Control A</description>
+            <addressOffset>0x0</addressOffset>
+            <size>8</size>
+            <resetValue>0x80</resetValue>
+            <fields>
+              <field>
+                <name>ONDEMAND</name>
+                <description>On Demand Control</description>
+                <bitOffset>7</bitOffset>
+                <bitWidth>1</bitWidth>
+              </field>
+            </fields>
+          </register>
+          <cluster>
+            <name>USART_EXT</name>
+            <description>USART EXTERNAL CLOCK Mode</description>
+            <alternateCluster>I2CM</alternateCluster>
+            <headerStructName>SercomUsart_ext</headerStructName>
+            <addressOffset>0x0</addressOffset>
+            <register>
+              <name>CTRLA</name>
+              <description>USART_EXT Control A</description>
+              <addressOffset>0x0</addressOffset>
+              <size>32</size>
+              <resetValue>0x00000000</resetValue>
+              <fields>
+                <field>
+                  <name>SWRST</name>
+                  <description>Software Reset</description>
+                  <bitOffset>0</bitOffset>
+                  <bitWidth>1</bitWidth>
+                </field>
+                <field>
+                  <name>ENABLE</name>
+                  <description>Enable</description>
+                  <bitOffset>1</bitOffset>
+                  <bitWidth>1</bitWidth>
+                 </field>
+               </fields>
+            </register>
+          </cluster>
+        </cluster>
         <register>
           <name>R2</name>
           <description>Blah-blah</description>
@@ -50,6 +100,29 @@
             <field>
               <name>THREE_BITS</name>
               <bitRange>[3:1]</bitRange>
+              <enumeratedValues>
+                <name>DIPOSelect</name>
+                <enumeratedValue>
+                  <name>PAD0</name>
+                  <description>SERCOM PAD[0] is used as data input</description>
+                  <value>0x0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>PAD1</name>
+                  <description>SERCOM PAD[1] is used as data input</description>
+                  <value>0x1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>PAD2</name>
+                  <description>SERCOM PAD[2] is used as data input</description>
+                  <value>0x2</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>PAD3</name>
+                  <description>SERCOM PAD[3] is used as data input</description>
+                  <isDefault>true</isDefault>
+                </enumeratedValue>
+              </enumeratedValues>
             </field>
             <field>
               <name>TWO_BITS</name>

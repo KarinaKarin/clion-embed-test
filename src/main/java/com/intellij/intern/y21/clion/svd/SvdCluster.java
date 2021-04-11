@@ -13,19 +13,22 @@ public class SvdCluster extends SvdRegisterLevel<SvdRegisterLevel<?>> {
         super(parentId + "|c:" + name, name, description, address, access, null, bitSize);
     }
 
+    /**
+     * @return all registers including nested
+     */
     @NotNull
-    public List<SvdRegister> getRegisters() {
+    public List<SvdRegister> getAllRegisters() {
         List<SvdRegister> registers = getChildren()
                 .stream()
-                .filter(n -> n instanceof SvdRegister)
-                .map(n -> (SvdRegister) n)
+                .filter(SvdRegister.class::isInstance)
+                .map(SvdRegister.class::cast)
                 .collect(Collectors.toList());
 
         getChildren()
                 .stream()
-                .filter(n -> n instanceof SvdCluster)
-                .map(n -> (SvdCluster) n)
-                .forEach(c -> registers.addAll(c.getRegisters()));
+                .filter(SvdCluster.class::isInstance)
+                .map(SvdCluster.class::cast)
+                .forEach(c -> registers.addAll(c.getAllRegisters()));
 
         return registers;
     }
