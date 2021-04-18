@@ -143,11 +143,11 @@ public class SvdRoot implements SvdNode<SvdFile> {
 
     Stream<Element> registersStream = Stream.concat(selectDomSubNodes(peripheralElement, "registers", "register").stream(),
                   selectDomSubNodes(peripheralDerivedFrom, "registers", "register").stream());
-    List<SvdRegister> registers = getRegisters(registersStream, peripheral, null, bigEndian);
+    List<SvdRegister> registers = getRegisters(registersStream, peripheral, bigEndian);
 
     Stream<Element> clustersStream = Stream.concat(selectDomSubNodes(peripheralElement, "registers", "cluster").stream(),
             selectDomSubNodes(peripheralDerivedFrom, "registers", "cluster").stream());
-    List<SvdCluster> clusters = getClusters(clustersStream, peripheral, null, bigEndian);
+    List<SvdCluster> clusters = getClusters(clustersStream, peripheral, bigEndian);
 
     List<SvdRegisterLevel<?>> result = new ArrayList<>(registers);
     result.addAll(clusters);
@@ -155,19 +155,18 @@ public class SvdRoot implements SvdNode<SvdFile> {
   }
 
   private static void loadContent(@NotNull SvdCluster cluster,
-                                  @NotNull SvdPeripheral peripheral,
                                   @NotNull Element clusterElement,
                                   @Nullable Element clusterDerivedFrom,
                                   boolean bigEndian) {
 
     Stream<Element> registersStream = Stream.concat(selectDomSubNodes(clusterElement, "register").stream(),
                                                     selectDomSubNodes(clusterDerivedFrom, "register").stream());
-    List<SvdRegister> registers = getRegisters(registersStream, peripheral, cluster, bigEndian);
+    List<SvdRegister> registers = getRegisters(registersStream, cluster, bigEndian);
 
     // cmsis-svd V1.3: nesting of cluster is supported
     Stream<Element> clusterStream = Stream.concat(selectDomSubNodes(clusterElement, "cluster").stream(),
                                                   selectDomSubNodes(clusterDerivedFrom, "cluster").stream());
-    List<SvdCluster> clusters = getClusters(clusterStream, peripheral, cluster, bigEndian);
+    List<SvdCluster> clusters = getClusters(clusterStream, cluster, bigEndian);
 
     List<SvdRegisterLevel<?>> result = new ArrayList<>(registers);
     result.addAll(clusters);
@@ -175,8 +174,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
   }
 
   private static List<SvdCluster> getClusters(@NotNull Stream<Element> clusterStream,
-                                              @NotNull SvdPeripheral peripheral,
-                                              @Nullable SvdCluster parent,
+                                              @NotNull RegisterPropsHolder parent,
                                               boolean bigEndian) {
 
     Map<String, Element> elements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -188,27 +186,20 @@ public class SvdRoot implements SvdNode<SvdFile> {
       String name = entry.getKey();
       String derivedFromName = element.getAttributeValue("derivedFrom");
       Element derivedFrom = derivedFromName == null ? null : elements.get(derivedFromName);
-      long baseAddress = peripheral.getBaseAddress();
-      if (parent != null) {
-        baseAddress = parent.getAddress().getUnsignedLongValue();
-      }
       Address address = Address.fromUnsignedLong(
-              baseAddress + getDomSubTagValue(element, derivedFrom, "addressOffset", Long::decode, 0L)
+              parent.getBaseAddress() + getDomSubTagValue(element, derivedFrom, "addressOffset", Long::decode, 0L)
       );
       String description = loadDescription(element, derivedFrom) + " (" + addressToString(address) + ")";
-      int registerSize = getDomSubTagValue(element, derivedFrom, "size", Integer::decode, peripheral.getRegisterBitSize());
+      int registerSize = getDomSubTagValue(element, derivedFrom, "size", Integer::decode, parent.getRegisterBitSize());
       RegisterAccess registerAccess =
-              getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, peripheral.getRegisterAccess());
+              getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, parent.getRegisterAccess());
       String headerStructName = getDomSubTagText(element, derivedFrom, "headerStructName");
-      String parentId = peripheral.getId();
-      if (parent != null) {
-        parentId = parent.getId();
-      }
+      String parentId = parent.getId();
       if (!headerStructName.isBlank()) {
         parentId += "|" + headerStructName;
       }
       SvdCluster cluster = new SvdCluster(parentId, name, description, address, registerAccess, registerSize);
-      loadContent(cluster, peripheral, element, derivedFrom, bigEndian);
+      loadContent(cluster, element, derivedFrom, bigEndian);
       clusters.add(cluster);
     }
     clusters.sort(NAME_COMPARATOR);
@@ -216,8 +207,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
   }
 
   private static List<SvdRegister> getRegisters(@NotNull Stream<Element> elementStream,
-                                                @NotNull SvdPeripheral peripheral,
-                                                @Nullable SvdCluster parent,
+                                                @NotNull RegisterPropsHolder parent,
                                                 boolean bigEndian) {
 
     Map<String, Element> elements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -229,22 +219,15 @@ public class SvdRoot implements SvdNode<SvdFile> {
       String name = entry.getKey();
       String derivedFromName = element.getAttributeValue("derivedFrom");
       Element derivedFrom = derivedFromName == null ? null : elements.get(derivedFromName);
-      long baseAddress = peripheral.getBaseAddress();
-      if (parent != null) {
-        baseAddress = parent.getAddress().getUnsignedLongValue();
-      }
       Address address = Address.fromUnsignedLong(
-              baseAddress + getDomSubTagValue(element, derivedFrom, "addressOffset", Long::decode, 0L)
+              parent.getBaseAddress() + getDomSubTagValue(element, derivedFrom, "addressOffset", Long::decode, 0L)
       );
       String description = loadDescription(element, derivedFrom) + " (" + addressToString(address) + ")";
-      int registerSize = getDomSubTagValue(element, derivedFrom, "size", Integer::decode, peripheral.getRegisterBitSize());
+      int registerSize = getDomSubTagValue(element, derivedFrom, "size", Integer::decode, parent.getRegisterBitSize());
       RegisterAccess registerAccess =
-              getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, peripheral.getRegisterAccess());
+              getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, parent.getRegisterAccess());
       RegisterReadAction registerReadAction = getDomSubTagValue(element, derivedFrom, "readAction", RegisterReadAction::parse, null);
-      String parentId = peripheral.getId();
-      if (parent != null) {
-        parentId = parent.getId();
-      }
+      String parentId = parent.getId();
       SvdRegister register = bigEndian ?
               new SvdRegisterBigEndian(parentId, name, description, address, registerSize, registerAccess,
                       registerReadAction) :
@@ -385,6 +368,9 @@ public class SvdRoot implements SvdNode<SvdFile> {
 
     enumValues.sort(NAME_COMPARATOR);
     field.setChildren(enumValues);
+    if (!enumValues.isEmpty()) {
+      field.setFormat(Format.ENUM);
+    }
   }
 
   private static void loadContent(@NotNull SvdEnum svdEnum,

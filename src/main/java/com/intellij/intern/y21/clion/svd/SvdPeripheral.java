@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.PrintWriter;
 import java.util.function.Predicate;
 
-public class SvdPeripheral extends SvdNodeBase<SvdRegisterLevel<?>> {
+public class SvdPeripheral extends SvdNodeBase<SvdRegisterLevel<?>> implements RegisterPropsHolder {
 
   private final int myRegisterBitSize;
   private final RegisterAccess myRegisterAccess;
@@ -30,14 +30,17 @@ public class SvdPeripheral extends SvdNodeBase<SvdRegisterLevel<?>> {
     super.exportCsv(writer, prefix + getName(), predicateActive);
   }
 
+  @Override
   public int getRegisterBitSize() {
     return myRegisterBitSize;
   }
 
+  @Override
   public long getBaseAddress() {
     return myBaseAddress;
   }
 
+  @Override
   @NotNull
   public RegisterAccess getRegisterAccess() {
     return myRegisterAccess == null ? RegisterAccess.READ_WRITE : myRegisterAccess;
