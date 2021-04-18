@@ -10,6 +10,13 @@ public class SvdEnum extends SvdNodeBase<SvdEnumValue> {
         this.usage = usage;
     }
 
+    public SvdEnumValue getEnumValue(long value) {
+        return getChildren()
+                .stream()
+                .filter(e -> e.getValue() == value)
+                .findAny().orElse(null);
+    }
+
     public EnumUsage getUsage() {
         return usage;
     }

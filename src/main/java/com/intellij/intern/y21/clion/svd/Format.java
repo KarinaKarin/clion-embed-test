@@ -34,6 +34,13 @@ public enum Format {
     public String format(long value, int bits) {
       return bitGroupFormat(value, bits, 1, "01", "0b");
     }
+  },
+  ENUM(EmbeddedBundle.messagePointer("format.enum"), 'E') {
+    @NotNull
+    @Override
+    public String format(long value, int bits) {
+      throw new UnsupportedOperationException("Shouldn't be called");
+    }
   };
 
   @NotNull
