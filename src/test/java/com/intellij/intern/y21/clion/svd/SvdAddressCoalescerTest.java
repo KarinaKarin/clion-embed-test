@@ -146,7 +146,7 @@ public class SvdAddressCoalescerTest {
         SvdCoalescerForTest coalescer = new SvdCoalescerForTest();
         coalescer.loadFrom(myAllNodes);
 
-        assertEquals(3, coalescer.size());
+        assertEquals(4, coalescer.size());
         Pair<AddressRange, List<SvdRegister>> pair1 = coalescer.get(0);
         assertEquals(0x1002, pair1.first.getStart().getUnsignedLongValue());
         assertEquals(0x1003, pair1.first.getEnd().getUnsignedLongValue());
@@ -156,6 +156,16 @@ public class SvdAddressCoalescerTest {
         assertEquals(0x1013, pair2.first.getStart().getUnsignedLongValue());
         assertEquals(0x1019, pair2.first.getEnd().getUnsignedLongValue());
         assertEquals("R0|R1|R2", pair2.second.stream().map(SvdNodeBase::getName).collect(Collectors.joining("|")));
+
+        Pair<AddressRange, List<SvdRegister>> pair3 = coalescer.get(2);
+        assertEquals(0x1030, pair3.first.getStart().getUnsignedLongValue());
+        assertEquals(0x1034, pair3.first.getEnd().getUnsignedLongValue());
+        assertEquals("DPLLCTRLA|DPLLRATIO", pair3.second.stream().map(SvdNodeBase::getName).collect(Collectors.joining("|")));
+
+        Pair<AddressRange, List<SvdRegister>> pair4 = coalescer.get(3);
+        assertEquals(0x1040, pair4.first.getStart().getUnsignedLongValue());
+        assertEquals(0x1047, pair4.first.getEnd().getUnsignedLongValue());
+        assertEquals("CTRLA|CTRLB", pair4.second.stream().map(SvdNodeBase::getName).collect(Collectors.joining("|")));
     }
 
     private static class SvdCoalescerForTest extends SvdAddressCoalescer {

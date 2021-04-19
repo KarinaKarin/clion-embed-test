@@ -4,6 +4,9 @@ import com.intellij.intern.y21.clion.stubs.Address;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static com.intellij.intern.y21.clion.svd.Format.HEX;
 
 public abstract class SvdRegisterLevel<T extends SvdNodeBase<?>> extends SvdValue<T> {
@@ -25,5 +28,14 @@ public abstract class SvdRegisterLevel<T extends SvdNodeBase<?>> extends SvdValu
     @Override
     public Format getDefaultFormat() {
         return DEFAULT_FORMAT;
+    }
+
+    @NotNull
+    public <CHILD_TYPE extends SvdRegisterLevel<T>> List<CHILD_TYPE> getChildren(Class<CHILD_TYPE> childType) {
+        return getChildren()
+                .stream()
+                .filter(childType::isInstance)
+                .map(childType::cast)
+                .collect(Collectors.toList());
     }
 }

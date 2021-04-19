@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class SvdPeripheral extends SvdNodeBase<SvdRegisterLevel<?>> implements RegisterPropsHolder {
 
@@ -44,5 +46,14 @@ public class SvdPeripheral extends SvdNodeBase<SvdRegisterLevel<?>> implements R
   @NotNull
   public RegisterAccess getRegisterAccess() {
     return myRegisterAccess == null ? RegisterAccess.READ_WRITE : myRegisterAccess;
+  }
+
+  @NotNull
+  public <T extends SvdRegisterLevel<?>> List<T> getChildren(Class<T> childType) {
+    return getChildren()
+            .stream()
+            .filter(childType::isInstance)
+            .map(childType::cast)
+            .collect(Collectors.toList());
   }
 }

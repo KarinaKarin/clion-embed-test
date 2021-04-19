@@ -59,17 +59,57 @@
               </field>
             </fields>
           </register>
+          <register>
+            <name>DPLLRATIO</name>
+            <description>DPLL Ratio Control</description>
+            <addressOffset>0x1</addressOffset>
+            <resetValue>0x00000000</resetValue>
+            <fields>
+              <field>
+                <name>LDR</name>
+                <description>Loop Divider Ratio</description>
+                <bitOffset>0</bitOffset>
+                <bitWidth>13</bitWidth>
+              </field>
+              <field>
+                <name>LDRFRAC</name>
+                <description>Loop Divider Ratio Fractional Part</description>
+                <bitOffset>16</bitOffset>
+                <bitWidth>5</bitWidth>
+              </field>
+            </fields>
+          </register>
           <cluster>
             <name>USART_EXT</name>
             <description>USART EXTERNAL CLOCK Mode</description>
             <alternateCluster>I2CM</alternateCluster>
             <headerStructName>SercomUsart_ext</headerStructName>
-            <addressOffset>0x0</addressOffset>
+            <addressOffset>0x10</addressOffset>
             <register>
               <name>CTRLA</name>
               <description>USART_EXT Control A</description>
               <addressOffset>0x0</addressOffset>
-              <size>32</size>
+              <resetValue>0x00000000</resetValue>
+              <fields>
+                <field>
+                  <name>SWRST</name>
+                  <description>Software Reset</description>
+                  <bitOffset>0</bitOffset>
+                  <bitWidth>1</bitWidth>
+                </field>
+                <field>
+                  <name>ENABLE</name>
+                  <description>Enable</description>
+                  <bitOffset>1</bitOffset>
+                  <bitWidth>1</bitWidth>
+                 </field>
+               </fields>
+            </register>
+            <register>
+              <name>CTRLB</name>
+              <description>USART_EXT Control B</description>
+              <addressOffset>0x4</addressOffset>
+              <access>read-only</access>
               <resetValue>0x00000000</resetValue>
               <fields>
                 <field>
@@ -102,6 +142,7 @@
               <bitRange>[3:1]</bitRange>
               <enumeratedValues>
                 <name>DIPOSelect</name>
+                <usage>write</usage>
                 <enumeratedValue>
                   <name>PAD0</name>
                   <description>SERCOM PAD[0] is used as data input</description>
