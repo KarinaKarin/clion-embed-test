@@ -31,7 +31,7 @@ public abstract class SvdRegisterLevel<T extends SvdNodeBase<?>> extends SvdValu
     }
 
     @NotNull
-    public <CHILD_TYPE extends SvdRegisterLevel<T>> List<CHILD_TYPE> getChildren(Class<CHILD_TYPE> childType) {
+    public <CHILD_TYPE extends SvdRegisterLevel<?>> List<CHILD_TYPE> getChildren(Class<CHILD_TYPE> childType) {
         return getChildren()
                 .stream()
                 .filter(childType::isInstance)

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,12 +30,12 @@ public class SvdAddressCoalescerTest {
 
     @Test
     public void testClusterWithNestedOne() {
-        validateCluster("DPLL", 1, 1, Arrays.asList("DPLLCTRLA", "CTRLA"));
+        validateCluster("DPLL", 1, 2, Arrays.asList("DPLLCTRLA", "DPLLRATIO", "CTRLA", "CTRLB"));
     }
 
     @Test
     public void testClusterWithoutNesting() {
-        validateCluster("USART_EXT", 0, 1, Collections.singletonList("CTRLA"));
+        validateCluster("USART_EXT", 0, 2, Arrays.asList("CTRLA", "CTRLB"));
     }
 
     private void validateCluster(String name, int expectedClusterChildCount,
@@ -146,7 +145,7 @@ public class SvdAddressCoalescerTest {
         SvdCoalescerForTest coalescer = new SvdCoalescerForTest();
         coalescer.loadFrom(myAllNodes);
 
-        assertEquals(4, coalescer.size());
+        assertEquals(13, coalescer.size());
         Pair<AddressRange, List<SvdRegister>> pair1 = coalescer.get(0);
         assertEquals(0x1002, pair1.first.getStart().getUnsignedLongValue());
         assertEquals(0x1003, pair1.first.getEnd().getUnsignedLongValue());

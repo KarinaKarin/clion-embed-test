@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.intellij.intern.y21.clion.svd.RegisterAccess.READ_ONLY;
 import static com.intellij.intern.y21.clion.svd.RegisterAccess.READ_WRITE;
@@ -16,7 +18,7 @@ public class RegisterPropertiesPropagationTest {
     @BeforeEach
     public void setUp() throws Exception {
         SvdRoot mySvdRoot = new SvdRoot();
-        mySvdRoot.addFile(SvdAddressCoalescerTest.class.getResourceAsStream("coalesce.svd"), "coalesce.svd", "coalesce.svd");
+        mySvdRoot.addFile(RegisterPropertiesPropagationTest.class.getResourceAsStream("coalesce.svd"), "coalesce.svd", "coalesce.svd");
         myAllNodes = new ArrayList<>();
         myAllNodes.add(mySvdRoot);
         for (int i = 0; i < myAllNodes.size(); i++) {
@@ -26,29 +28,53 @@ public class RegisterPropertiesPropagationTest {
 
     @Test
     public void testPeriphClusterPropagation() {
-        testPeripheralCluster("P1", "DPLL", 0x1030, 32, READ_WRITE);
+        testPeripheralClusterPropagation("P1", "DPLL", 0x1030, 32, READ_WRITE);
     }
 
     @Test
     public void testNestedClusterPropagation() {
-        testClusterCluster("DPLL", "USART_EXT", 0x1040, 32, READ_WRITE);
+        testClusterClusterPropagation("DPLL", "USART_EXT", 0x1040, 32, READ_WRITE);
     }
 
     @Test
     public void testClusterRegisterPropagation() {
-        testClusterRegister("DPLL", "DPLLRATIO", 0x1031, 32, READ_WRITE);
-        testClusterRegister("USART_EXT", "CTRLA", 0x1040, 32, READ_WRITE);
+        testClusterRegisterPropagation("DPLL", "DPLLRATIO", 0x1031, 32, READ_WRITE);
+        testClusterRegisterPropagation("USART_EXT", "CTRLA", 0x1040, 32, READ_WRITE);
     }
 
     @Test
     public void testRegisterPropsPriority() {
-        testClusterRegister("DPLL", "DPLLCTRLA", 0x1030, 8, READ_WRITE);
-        testClusterRegister("USART_EXT", "CTRLB", 0x1044, 32, READ_ONLY);
+        testClusterRegisterPropagation("DPLL", "DPLLCTRLA", 0x1030, 8, READ_WRITE);
+        testClusterRegisterPropagation("USART_EXT", "CTRLB", 0x1044, 32, READ_ONLY);
     }
 
-    private void testPeripheralCluster(String peripheralName, String clusterName,
-                                       long expectedAddress, int expectedBitSize,
-                                       RegisterAccess expectedAccess) {
+    @Test
+    public void testClusterArrayAddressCalcAndPropagation() {
+        testClusterArrayCluster("CLS1[]", Map.of("CLS1[0]",0x1130L, "CLS1[1]", 0x1132L));
+        testClusterRegisterPropagation("CLS1[0]", "R1", 0x1130, 8, READ_WRITE);
+        testClusterRegisterPropagation("CLS1[0]", "R11", 0x1131, 8, READ_WRITE);
+        testClusterRegisterPropagation("CLS1[1]", "R1", 0x1132, 8, READ_WRITE);
+        testClusterRegisterPropagation("CLS1[1]", "R11", 0x1133, 8, READ_WRITE);
+    }
+
+    @Test
+    public void testClusterArrayNamesWithChars() {
+        testClusterArrayCluster("CLS2_", Map.of("CLS2_B",0x1140L, "CLS2_C", 0x1142L, "CLS2_D", 0x1144L));
+    }
+
+    @Test
+    public void testClusterArrayNamesWithDigits() {
+        testClusterArrayCluster("CLS3_", Map.of("CLS3_21",0x1150L, "CLS3_22", 0x1152L));
+    }
+
+    @Test
+    public void testClusterArrayNamesWithList() {
+        testClusterArrayCluster("CLS4_", Map.of("CLS4_A",0x1160L, "CLS4_B", 0x1162L, "CLS4_C", 0x1164L));
+    }
+
+    private void testPeripheralClusterPropagation(String peripheralName, String clusterName,
+                                                  long expectedAddress, int expectedBitSize,
+                                                  RegisterAccess expectedAccess) {
         SvdPeripheral peripheral = nodeByName(SvdPeripheral.class, peripheralName);
 
         SvdCluster cluster = peripheral.getChildren(SvdCluster.class)
@@ -62,9 +88,24 @@ public class RegisterPropertiesPropagationTest {
         assertEquals(expectedAccess, cluster.getAccess());
     }
 
-    private void testClusterCluster(String clusterName, String nestedClusterName,
-                                    long expectedAddress, int expectedBitSize,
-                                    RegisterAccess expectedAccess) {
+    private void testClusterArrayCluster(String clusterArrayName,
+                                         Map<String, Long> clusters) {
+        SvdClusterArray clusterArray = nodeByName(SvdClusterArray.class, clusterArrayName);
+
+        Map<String, Long> children = clusterArray
+                .getChildren()
+                .stream()
+                .collect(Collectors.toMap(
+                        SvdNodeBase::getName,
+                        c -> c.getAddress().getUnsignedLongValue())
+                );
+
+        assertEquals(clusters, children);
+    }
+
+    private void testClusterClusterPropagation(String clusterName, String nestedClusterName,
+                                               long expectedAddress, int expectedBitSize,
+                                               RegisterAccess expectedAccess) {
         SvdCluster cluster = nodeByName(SvdCluster.class, clusterName);
 
         SvdCluster nestedCluster = cluster.getChildren(SvdCluster.class)
@@ -78,12 +119,12 @@ public class RegisterPropertiesPropagationTest {
         assertEquals(expectedAccess, nestedCluster.getAccess());
     }
 
-    private void testClusterRegister(String clusterName, String registerName,
-                                     long expectedAddress, int expectedBitSize,
-                                     RegisterAccess expectedAccess) {
+    private void testClusterRegisterPropagation(String clusterName, String registerName,
+                                                long expectedAddress, int expectedBitSize,
+                                                RegisterAccess expectedAccess) {
         SvdCluster cluster = nodeByName(SvdCluster.class, clusterName);
 
-        SvdRegister register = cluster.getClusterRegisters()
+        SvdRegister register = cluster.getChildren(SvdRegister.class)
                 .stream()
                 .filter(c -> c.getName().equals(registerName))
                 .findAny()

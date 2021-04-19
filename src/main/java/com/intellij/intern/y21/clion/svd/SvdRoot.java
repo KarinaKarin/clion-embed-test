@@ -147,10 +147,9 @@ public class SvdRoot implements SvdNode<SvdFile> {
 
     Stream<Element> clustersStream = Stream.concat(selectDomSubNodes(peripheralElement, "registers", "cluster").stream(),
             selectDomSubNodes(peripheralDerivedFrom, "registers", "cluster").stream());
-    List<SvdCluster> clusters = getClusters(clustersStream, peripheral, bigEndian);
 
-    List<SvdRegisterLevel<?>> result = new ArrayList<>(registers);
-    result.addAll(clusters);
+    List<SvdRegisterLevel<?>> result = new ArrayList<>(getClusters(clustersStream, peripheral, bigEndian));
+    result.addAll(registers);
     peripheral.setChildren(result);
   }
 
@@ -166,21 +165,20 @@ public class SvdRoot implements SvdNode<SvdFile> {
     // cmsis-svd V1.3: nesting of cluster is supported
     Stream<Element> clusterStream = Stream.concat(selectDomSubNodes(clusterElement, "cluster").stream(),
                                                   selectDomSubNodes(clusterDerivedFrom, "cluster").stream());
-    List<SvdCluster> clusters = getClusters(clusterStream, cluster, bigEndian);
 
-    List<SvdRegisterLevel<?>> result = new ArrayList<>(registers);
-    result.addAll(clusters);
+    List<SvdRegisterLevel<?>> result = new ArrayList<>(getClusters(clusterStream, cluster, bigEndian));
+    result.addAll(registers);
     cluster.setChildren(result);
   }
 
-  private static List<SvdCluster> getClusters(@NotNull Stream<Element> clusterStream,
+  private static List<SvdRegisterLevel<?>> getClusters(@NotNull Stream<Element> clusterStream,
                                               @NotNull RegisterPropsHolder parent,
                                               boolean bigEndian) {
 
     Map<String, Element> elements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     clusterStream.forEach(element -> elements.put(element.getChildText("name"), element));
 
-    List<SvdCluster> clusters = new ArrayList<>();
+    List<SvdRegisterLevel<?>> clusters = new ArrayList<>();
     for (Map.Entry<String, Element> entry : elements.entrySet()) {
       Element element = entry.getValue();
       String name = entry.getKey();
@@ -198,12 +196,65 @@ public class SvdRoot implements SvdNode<SvdFile> {
       if (!headerStructName.isBlank()) {
         parentId += "|" + headerStructName;
       }
-      SvdCluster cluster = new SvdCluster(parentId, name, description, address, registerAccess, registerSize);
-      loadContent(cluster, element, derivedFrom, bigEndian);
-      clusters.add(cluster);
+
+      int dim = getDomSubTagValue(element, derivedFrom, "dim", Integer::decode, 0);
+
+      if (dim == 0) {
+        SvdCluster cluster = new SvdCluster(parentId, name, description, address, registerAccess, registerSize);
+        loadContent(cluster, element, derivedFrom, bigEndian);
+        clusters.add(cluster);
+      } else {
+        String dimName = getDomSubTagText(element, derivedFrom, "dimName");
+        if (dimName.isBlank()) {
+          dimName = name;
+        }
+        int dimIncrement = getDomSubTagValue(element, derivedFrom, "dimIncrement", Integer::decode, 0);
+        String dimIndexText = getDomSubTagText(element, derivedFrom, "dimIndex");
+        List<String> indices = generateDimIndices(dim, dimIndexText);
+        SvdClusterArray clusterArray = new SvdClusterArray(parentId, String.format(dimName, ""), "", address, registerAccess, null, registerSize);
+
+        List<SvdCluster> clusterArrayChildren = new ArrayList<>(dim * 3 / 2);
+        // @todo loadContent should be called once
+        // @todo Object.clone() should be used to fill children of each cluster
+        // @todo classes should implement Cloneable,
+        for (int i = 0; i < dim; i++) {
+          String currName = String.format(dimName, indices.get(i));
+          SvdCluster cluster = new SvdCluster(clusterArray.getId(), currName, description, address, registerAccess, registerSize);
+          loadContent(cluster, element, derivedFrom, bigEndian);
+          address = address.plus(dimIncrement);
+          clusterArrayChildren.add(cluster);
+        }
+        clusterArray.setChildren(clusterArrayChildren);
+        clusters.add(clusterArray);
+      }
     }
     clusters.sort(NAME_COMPARATOR);
     return clusters;
+  }
+
+  private static List<String> generateDimIndices(int dim, @NotNull String dimIndexText) {
+    List<String> indices = new ArrayList<>(dim * 3 / 2);
+    if (dimIndexText.contains(",")) {
+      indices = Arrays.asList(dimIndexText.split(",\\s*"));
+    } else if (dimIndexText.contains("-")) {
+      String[] bounds = dimIndexText.split("-");
+      if (Character.isLetter(bounds[0].charAt(0))) {
+        for (char i = bounds[0].charAt(0); i <= bounds[1].charAt(0); i++) {
+          indices.add(String.valueOf(i));
+        }
+      } else {
+        int from = Integer.parseInt(bounds[0]);
+        int to = Integer.parseInt(bounds[1]);
+        for (int i = from; i <= to; i++) {
+          indices.add(String.valueOf(i));
+        }
+      }
+    } else {
+      for (int i = 0; i < dim; i++) {
+        indices.add(String.valueOf(i));
+      }
+    }
+    return indices;
   }
 
   private static List<SvdRegister> getRegisters(@NotNull Stream<Element> elementStream,

@@ -39,8 +39,6 @@
           <resetMask>0x03FFFFFF</resetMask>
         </register>
         <cluster>
-          <dim>2</dim>
-          <dimIncrement>0x14</dimIncrement>
           <name>DPLL</name>
           <description/>
           <addressOffset>0x30</addressOffset>
@@ -213,6 +211,72 @@
           <resetValue>0x00000000</resetValue>
           <resetMask>0x03FFFFFF</resetMask>
         </register>
+        <cluster>
+          <name>CLS1[%s]</name>
+          <dim>2</dim>
+          <dimIncrement>2</dimIncrement>
+          <description/>
+          <addressOffset>0x130</addressOffset>
+          <register>
+            <name>R1</name>
+            <description>Test reg</description>
+            <addressOffset>0x0</addressOffset>
+            <size>8</size>
+            <resetValue>0x80</resetValue>
+          </register>
+          <register>
+            <name>R11</name>
+            <description>Test reg</description>
+            <addressOffset>0x1</addressOffset>
+            <size>8</size>
+            <resetValue>0x80</resetValue>
+          </register>
+        </cluster>
+        <cluster>
+          <name>CLS2_%s</name>
+          <dim>3</dim>
+          <dimIndex>B-D</dimIndex>
+          <dimIncrement>2</dimIncrement>
+          <description/>
+          <addressOffset>0x140</addressOffset>
+          <register>
+            <name>R2</name>
+            <description>Test reg</description>
+            <addressOffset>0x0</addressOffset>
+            <size>8</size>
+            <resetValue>0x80</resetValue>
+          </register>
+        </cluster>
+        <cluster>
+          <name>CLS3_%s</name>
+          <dim>2</dim>
+          <dimIndex>21-22</dimIndex>
+          <dimIncrement>2</dimIncrement>
+          <description/>
+          <addressOffset>0x150</addressOffset>
+          <register>
+            <name>R3</name>
+            <description>Test reg</description>
+            <addressOffset>0x0</addressOffset>
+            <size>8</size>
+            <resetValue>0x80</resetValue>
+          </register>
+        </cluster>
+        <cluster>
+          <name>CLS4_%s</name>
+          <dim>3</dim>
+          <dimIndex>A, B, C</dimIndex>
+          <dimIncrement>2</dimIncrement>
+          <description/>
+          <addressOffset>0x160</addressOffset>
+          <register>
+            <name>R3</name>
+            <description>Test reg</description>
+            <addressOffset>0x0</addressOffset>
+            <size>8</size>
+            <resetValue>0x80</resetValue>
+          </register>
+        </cluster>
       </registers>
     </peripheral>
 

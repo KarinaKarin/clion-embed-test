@@ -33,15 +33,6 @@ public class SvdCluster extends SvdRegisterLevel<SvdRegisterLevel<?>> implements
         return registers;
     }
 
-    @NotNull
-    public List<SvdRegister> getClusterRegisters() {
-        return getChildren()
-                .stream()
-                .filter(SvdRegister.class::isInstance)
-                .map(SvdRegister.class::cast)
-                .collect(Collectors.toList());
-    }
-
     @Override
     public int getRegisterBitSize() {
         return getBitSize();
