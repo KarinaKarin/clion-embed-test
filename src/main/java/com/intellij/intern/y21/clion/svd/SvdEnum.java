@@ -3,9 +3,9 @@ package com.intellij.intern.y21.clion.svd;
 import org.jetbrains.annotations.NotNull;
 
 public class SvdEnum extends SvdNodeBase<SvdEnumValue> {
-    private final EnumUsage usage;
+    private final RegisterAccess usage;
 
-    public SvdEnum(@NotNull String parentId, @NotNull String name, @NotNull EnumUsage usage) {
+    public SvdEnum(@NotNull String parentId, @NotNull String name, @NotNull RegisterAccess usage) {
         super(parentId + "|" + name, name, "");
         this.usage = usage;
     }
@@ -17,7 +17,7 @@ public class SvdEnum extends SvdNodeBase<SvdEnumValue> {
                 .findAny().orElse(null);
     }
 
-    public EnumUsage getUsage() {
+    public RegisterAccess getUsage() {
         return usage;
     }
 }

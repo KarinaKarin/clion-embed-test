@@ -355,7 +355,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
       String name = entry.getKey();
       String derivedFromName = element.getAttributeValue("derivedFrom");
       Element derivedFrom = derivedFromName == null ? null : elements.get(derivedFromName);
-      EnumUsage enumUsage = getDomSubTagValue(element, derivedFrom, "usage", EnumUsage::parse, EnumUsage.READ_WRITE);
+      RegisterAccess enumUsage = getDomSubTagValue(element, derivedFrom, "usage", RegisterAccess::parseUsage, RegisterAccess.READ_WRITE);
       String parentId = field.getId();
       String headerStructName = getDomSubTagText(element, derivedFrom, "headerStructName");
       if (!headerStructName.isBlank()) {

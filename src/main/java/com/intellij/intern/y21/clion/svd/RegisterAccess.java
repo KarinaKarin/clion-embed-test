@@ -37,4 +37,16 @@ public enum RegisterAccess {
         return READ_WRITE;
     }
   }
+
+  @NotNull
+  public static RegisterAccess parseUsage(@Nullable String s) {
+    switch (Objects.toString(s, "")) {
+      case "read":
+        return READ_ONLY;
+      case "write":
+        return WRITE_ONLY;
+      default:
+        return READ_WRITE;
+    }
+  }
 }
