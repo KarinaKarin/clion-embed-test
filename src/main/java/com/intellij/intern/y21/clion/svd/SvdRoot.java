@@ -143,13 +143,14 @@ public class SvdRoot implements SvdNode<SvdFile> {
 
     Stream<Element> registersStream = Stream.concat(selectDomSubNodes(peripheralElement, "registers", "register").stream(),
                   selectDomSubNodes(peripheralDerivedFrom, "registers", "register").stream());
-    List<SvdRegister> registers = getRegisters(registersStream, peripheral, bigEndian);
+    List<SvdRegisterLevel<?>> registers = getRegisters(registersStream, peripheral, bigEndian);
 
     Stream<Element> clustersStream = Stream.concat(selectDomSubNodes(peripheralElement, "registers", "cluster").stream(),
             selectDomSubNodes(peripheralDerivedFrom, "registers", "cluster").stream());
 
     List<SvdRegisterLevel<?>> result = new ArrayList<>(getClusters(clustersStream, peripheral, bigEndian));
     result.addAll(registers);
+    result.sort(Comparator.comparing(SvdRegisterLevel::getAddress));
     peripheral.setChildren(result);
   }
 
@@ -160,7 +161,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
 
     Stream<Element> registersStream = Stream.concat(selectDomSubNodes(clusterElement, "register").stream(),
                                                     selectDomSubNodes(clusterDerivedFrom, "register").stream());
-    List<SvdRegister> registers = getRegisters(registersStream, cluster, bigEndian);
+    List<SvdRegisterLevel<?>> registers = getRegisters(registersStream, cluster, bigEndian);
 
     // cmsis-svd V1.3: nesting of cluster is supported
     Stream<Element> clusterStream = Stream.concat(selectDomSubNodes(clusterElement, "cluster").stream(),
@@ -168,6 +169,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
 
     List<SvdRegisterLevel<?>> result = new ArrayList<>(getClusters(clusterStream, cluster, bigEndian));
     result.addAll(registers);
+    result.sort(Comparator.comparing(SvdRegisterLevel::getAddress));
     cluster.setChildren(result);
   }
 
@@ -228,7 +230,7 @@ public class SvdRoot implements SvdNode<SvdFile> {
         clusters.add(clusterArray);
       }
     }
-    clusters.sort(NAME_COMPARATOR);
+    clusters.sort(Comparator.comparing(SvdRegisterLevel::getAddress));
     return clusters;
   }
 
@@ -257,14 +259,14 @@ public class SvdRoot implements SvdNode<SvdFile> {
     return indices;
   }
 
-  private static List<SvdRegister> getRegisters(@NotNull Stream<Element> elementStream,
+  private static List<SvdRegisterLevel<?>> getRegisters(@NotNull Stream<Element> elementStream,
                                                 @NotNull RegisterPropsHolder parent,
                                                 boolean bigEndian) {
 
     Map<String, Element> elements = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     elementStream.forEach(element -> elements.put(element.getChildText("name"), element));
 
-    List<SvdRegister> registers = new ArrayList<>();
+    List<SvdRegisterLevel<?>> registers = new ArrayList<>();
     for (Map.Entry<String, Element> entry : elements.entrySet()) {
       Element element = entry.getValue();
       String name = entry.getKey();
@@ -279,15 +281,46 @@ public class SvdRoot implements SvdNode<SvdFile> {
               getDomSubTagValue(element, derivedFrom, "access", RegisterAccess::parse, parent.getRegisterAccess());
       RegisterReadAction registerReadAction = getDomSubTagValue(element, derivedFrom, "readAction", RegisterReadAction::parse, null);
       String parentId = parent.getId();
-      SvdRegister register = bigEndian ?
-              new SvdRegisterBigEndian(parentId, name, description, address, registerSize, registerAccess,
-                      registerReadAction) :
-              new SvdRegister(parentId, name, description, address, registerSize, registerAccess,
-                      registerReadAction);
-      loadContent(register, element, derivedFrom);
-      registers.add(register);
+
+      int dim = getDomSubTagValue(element, derivedFrom, "dim", Integer::decode, 0);
+      if (dim == 0) {
+        SvdRegister register = bigEndian ?
+                new SvdRegisterBigEndian(parentId, name, description, address, registerSize, registerAccess,
+                        registerReadAction) :
+                new SvdRegister(parentId, name, description, address, registerSize, registerAccess,
+                        registerReadAction);
+        loadContent(register, element, derivedFrom);
+        registers.add(register);
+      } else {
+        String dimName = getDomSubTagText(element, derivedFrom, "dimName");
+        if (dimName.isBlank()) {
+          dimName = name;
+        }
+        int dimIncrement = getDomSubTagValue(element, derivedFrom, "dimIncrement", Integer::decode, 0);
+        String dimIndexText = getDomSubTagText(element, derivedFrom, "dimIndex");
+        List<String> indices = generateDimIndices(dim, dimIndexText);
+        SvdRegisterArray registerArray = new SvdRegisterArray(parentId, String.format(dimName, ""), "", address, registerAccess, null, registerSize);
+
+        List<SvdRegister> registerArrayChildren = new ArrayList<>(dim * 3 / 2);
+        // @todo loadContent should be called once
+        // @todo Object.clone() should be used to fill children of each cluster
+        // @todo classes should implement Cloneable,
+        for (int i = 0; i < dim; i++) {
+          String currName = String.format(dimName, indices.get(i));
+          SvdRegister register = bigEndian ?
+                  new SvdRegisterBigEndian(registerArray.getId(), currName, description, address, registerSize, registerAccess,
+                          registerReadAction) :
+                  new SvdRegister(registerArray.getId(), currName, description, address, registerSize, registerAccess,
+                          registerReadAction);
+          loadContent(register, element, derivedFrom);
+          address = address.plus(dimIncrement);
+          registerArrayChildren.add(register);
+        }
+        registerArray.setChildren(registerArrayChildren);
+        registers.add(registerArray);
+      }
     }
-    registers.sort(Comparator.comparing(SvdRegister::getAddress));
+    registers.sort(Comparator.comparing(SvdRegisterLevel::getAddress));
     return registers;
   }
 

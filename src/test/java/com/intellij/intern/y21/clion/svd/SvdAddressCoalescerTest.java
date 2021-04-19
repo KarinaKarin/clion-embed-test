@@ -154,7 +154,7 @@ public class SvdAddressCoalescerTest {
         Pair<AddressRange, List<SvdRegister>> pair2 = coalescer.get(1);
         assertEquals(0x1013, pair2.first.getStart().getUnsignedLongValue());
         assertEquals(0x1019, pair2.first.getEnd().getUnsignedLongValue());
-        assertEquals("R0|R1|R2", pair2.second.stream().map(SvdNodeBase::getName).collect(Collectors.joining("|")));
+        assertEquals("R[0]|R1|R[1]|R2", pair2.second.stream().map(SvdNodeBase::getName).collect(Collectors.joining("|")));
 
         Pair<AddressRange, List<SvdRegister>> pair3 = coalescer.get(2);
         assertEquals(0x1030, pair3.first.getStart().getUnsignedLongValue());

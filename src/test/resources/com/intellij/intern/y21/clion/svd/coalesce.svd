@@ -203,7 +203,9 @@
       <access>read-write</access>
       <registers>
         <register>
-          <name>R0</name>
+          <name>R[%s]</name>
+          <dim>2</dim>
+          <dimIncrement>2</dimIncrement>
           <description>Blah-blah</description>
           <addressOffset>0x13</addressOffset>
           <size>16</size>
