@@ -159,7 +159,7 @@
                 <enumeratedValue>
                   <name>PAD3</name>
                   <description>SERCOM PAD[3] is used as data input</description>
-                  <isDefault>true</isDefault>
+                  <value>0x3</value>
                 </enumeratedValue>
               </enumeratedValues>
             </field>

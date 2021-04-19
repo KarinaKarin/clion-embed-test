@@ -470,10 +470,9 @@ public class SvdRoot implements SvdNode<SvdFile> {
     for (Map.Entry<String, Element> entry : elements.entrySet()) {
       Element element = entry.getValue();
       String name = entry.getKey();
-      Long value = getDomSubTagValue(element, null, "value", Long::decode, null);
-      Boolean isDefault = getDomSubTagValue(element, null, "isDefault", Boolean::parseBoolean, null);
+      Long value = getDomSubTagValue(element, null, "value", Long::decode, -1L);
       String description = loadDescription(element, null);
-      enumValues.add(new SvdEnumValue(svdEnum.getId() + "|" + name, name, description, value, isDefault));
+      enumValues.add(new SvdEnumValue(svdEnum.getId() + "|" + name, name, description, value));
     }
     svdEnum.setChildren(enumValues);
   }

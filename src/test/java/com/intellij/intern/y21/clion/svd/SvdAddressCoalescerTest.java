@@ -77,27 +77,26 @@ public class SvdAddressCoalescerTest {
 
     @Test
     public void testEnumWithZeroValue() {
-        validateEnum("PAD0", 0L, null, "SERCOM PAD[0] is used as data input");
+        validateEnum("PAD0", 0L, "SERCOM PAD[0] is used as data input");
     }
 
     @Test
     public void testEnumWithNonZeroValue() {
-        validateEnum("PAD2", 2L, null, "SERCOM PAD[2] is used as data input");
+        validateEnum("PAD2", 2L, "SERCOM PAD[2] is used as data input");
     }
 
     @Test
     public void testEnumIsDefault() {
-        validateEnum("PAD3", null, true, "SERCOM PAD[3] is used as data input");
+        validateEnum("PAD3", 3L, "SERCOM PAD[3] is used as data input");
     }
 
-    private void validateEnum(String enumName, Long expectedValue, Boolean expectedIsDefault, String expectedDescription) {
+    private void validateEnum(String enumName, Long expectedValue, String expectedDescription) {
         SvdEnumValue svdEnum = (SvdEnumValue) myAllNodes.stream()
                 .filter(node -> enumName.equals(node.getName()))
                 .findAny()
                 .orElseThrow(AssertionError::new);
 
         assertEquals(expectedValue, svdEnum.getValue());
-        assertEquals(expectedIsDefault, svdEnum.getDefault());
         assertEquals(expectedDescription, svdEnum.getDescription());
     }
 

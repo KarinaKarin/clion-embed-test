@@ -39,13 +39,22 @@ public class SvdField extends SvdValue<SvdEnum> {
   @Override
   @NotNull
   public String getDisplayValue() {
-    if (getFormat() == Format.ENUM && !getChildren().isEmpty()) {
-      return getChildren().get(0).getEnumValue(value).getDisplayValue();
-    } else if (getAccess().isReadable() && !myParent.isFailed()) {
+    if (getAccess().isReadable() && !myParent.isFailed()) {
+      if (getFormat() == Format.ENUM && !getChildren().isEmpty()) {
+        return getChildren().get(0).getEnumValue(value).getDisplayValue();
+      }
       return getFormat().format(value, getBitSize());
-    } else {
-      return "-";
     }
+    return "-";
+  }
+
+  @NotNull
+  public String getValueDescription() {
+    if (getAccess().isReadable() && !myParent.isFailed() &&
+            getFormat() == Format.ENUM && !getChildren().isEmpty()) {
+        return getChildren().get(0).getEnumValue(value).getDescription();
+      }
+    return "";
   }
 
   @NotNull
